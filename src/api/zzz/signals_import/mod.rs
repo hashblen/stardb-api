@@ -171,6 +171,7 @@ async fn post_zzz_signals_import(
             username,
             verified: true,
             private: false,
+            active: true,
         };
 
         database::zzz::connections::set(&connection, &pool).await?;

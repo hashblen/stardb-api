@@ -3,5 +3,4 @@ SELECT
 FROM
     gi_connections
 WHERE
-    username = $1
-    AND active = TRUE;
+    uid = $1;

@@ -147,7 +147,7 @@ async fn get_signal_tracker(
 ) -> ApiResult<impl Responder> {
     let uid = *uid;
 
-    let mut forbidden = database::zzz::connections::get_by_uid(uid, &pool)
+    let mut forbidden = database::zzz::connections::get_by_uid_all(uid, &pool)
         .await?
         .iter()
         .any(|c| c.private);

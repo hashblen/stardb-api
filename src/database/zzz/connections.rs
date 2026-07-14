@@ -6,6 +6,7 @@ pub struct DbConnection {
     pub username: String,
     pub verified: bool,
     pub private: bool,
+    pub active: bool,
 }
 
 pub async fn set(connection: &DbConnection, pool: &PgPool) -> Result<()> {
@@ -14,7 +15,8 @@ pub async fn set(connection: &DbConnection, pool: &PgPool) -> Result<()> {
         connection.uid,
         connection.username,
         connection.verified,
-        false,
+        connection.private,
+        connection.active,
     )
     .execute(pool)
     .await?;
@@ -22,11 +24,12 @@ pub async fn set(connection: &DbConnection, pool: &PgPool) -> Result<()> {
     Ok(())
 }
 
-pub async fn delete(connection: &DbConnection, pool: &PgPool) -> Result<()> {
+pub async fn set_active(uid: i32, username: &str, active: bool, pool: &PgPool) -> Result<()> {
     sqlx::query_file!(
-        "sql/zzz/connections/delete.sql",
-        connection.uid,
-        connection.username,
+        "sql/zzz/connections/set_active.sql",
+        uid,
+        username,
+        active,
     )
     .execute(pool)
     .await?;
@@ -37,6 +40,14 @@ pub async fn delete(connection: &DbConnection, pool: &PgPool) -> Result<()> {
 pub async fn get_by_uid(uid: i32, pool: &PgPool) -> Result<Vec<DbConnection>> {
     Ok(
         sqlx::query_file_as!(DbConnection, "sql/zzz/connections/get_by_uid.sql", uid)
+            .fetch_all(pool)
+            .await?,
+    )
+}
+
+pub async fn get_by_uid_all(uid: i32, pool: &PgPool) -> Result<Vec<DbConnection>> {
+    Ok(
+        sqlx::query_file_as!(DbConnection, "sql/zzz/connections/get_by_uid_all.sql", uid)
             .fetch_all(pool)
             .await?,
     )

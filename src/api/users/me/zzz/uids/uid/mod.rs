@@ -57,6 +57,7 @@ async fn put_user_zzz_uid(
         uid: *uid,
         verified: false,
         private: false,
+        active: true,
     };
 
     database::zzz::uids::set(&database::zzz::uids::DbUid { uid: *uid }, &pool).await?;
@@ -84,14 +85,7 @@ async fn delete_user_zzz_uid(
         return Ok(HttpResponse::BadRequest().finish());
     };
 
-    let connection = database::zzz::connections::DbConnection {
-        username,
-        uid: *uid,
-        verified: false,
-        private: false,
-    };
-
-    database::zzz::connections::delete(&connection, &pool).await?;
+    database::zzz::connections::set_active(*uid, &username, false, &pool).await?;
 
     Ok(HttpResponse::Ok().finish())
 }

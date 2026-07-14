@@ -63,6 +63,7 @@ async fn put_user_uid(
         uid,
         verified: false,
         private: false,
+        active: true,
     };
 
     // Wacky way to update the database in case the uid isn't in there
@@ -110,14 +111,7 @@ async fn delete_user_uid(
         return Ok(HttpResponse::BadRequest().finish());
     };
 
-    let connection = database::connections::DbConnection {
-        username,
-        uid: *uid,
-        verified: false,
-        private: false,
-    };
-
-    database::connections::delete(&connection, &pool).await?;
+    database::connections::set_active(*uid, &username, false, &pool).await?;
 
     Ok(HttpResponse::Ok().finish())
 }

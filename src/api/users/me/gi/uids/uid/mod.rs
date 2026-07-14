@@ -57,6 +57,7 @@ async fn put_user_gi_uid(
         uid: *uid,
         verified: false,
         private: false,
+        active: true,
     };
 
     database::gi::connections::set(&connection, &pool).await?;
@@ -83,14 +84,7 @@ async fn delete_user_gi_uid(
         return Ok(HttpResponse::BadRequest().finish());
     };
 
-    let connection = database::gi::connections::DbConnection {
-        username,
-        uid: *uid,
-        verified: false,
-        private: false,
-    };
-
-    database::gi::connections::delete(&connection, &pool).await?;
+    database::gi::connections::set_active(*uid, &username, false, &pool).await?;
 
     Ok(HttpResponse::Ok().finish())
 }

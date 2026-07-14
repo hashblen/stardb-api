@@ -6,23 +6,26 @@ pub struct DbConnection {
     pub username: String,
     pub verified: bool,
     pub private: bool,
+    pub active: bool,
 }
 
 pub async fn set(connection: &DbConnection, pool: &PgPool) -> Result<()> {
     sqlx::query!(
         "INSERT INTO connections
-            (uid, username, verified, private) 
+            (uid, username, verified, private, active) 
         VALUES
-            ($1, $2, $3, $4) 
+            ($1, $2, $3, $4, $5) 
         ON CONFLICT
             (uid, username) 
         DO UPDATE SET 
-            verified = EXCLUDED.verified
+            verified = EXCLUDED.verified,
+            active = EXCLUDED.active
         ",
         connection.uid,
         connection.username,
         connection.verified,
         connection.private,
+        connection.active,
     )
     .execute(pool)
     .await?;
@@ -30,11 +33,12 @@ pub async fn set(connection: &DbConnection, pool: &PgPool) -> Result<()> {
     Ok(())
 }
 
-pub async fn delete(connection: &DbConnection, pool: &PgPool) -> Result<()> {
+pub async fn set_active(uid: i32, username: &str, active: bool, pool: &PgPool) -> Result<()> {
     sqlx::query!(
-        "DELETE FROM connections WHERE uid = $1 AND username = $2",
-        connection.uid,
-        connection.username,
+        "UPDATE connections SET active = $3 WHERE uid = $1 AND username = $2",
+        uid,
+        username,
+        active,
     )
     .execute(pool)
     .await?;
@@ -43,6 +47,16 @@ pub async fn delete(connection: &DbConnection, pool: &PgPool) -> Result<()> {
 }
 
 pub async fn get_by_uid(uid: i32, pool: &PgPool) -> Result<Vec<DbConnection>> {
+    Ok(sqlx::query_as!(
+        DbConnection,
+        "SELECT * FROM connections WHERE uid = $1 AND active = TRUE",
+        uid,
+    )
+    .fetch_all(pool)
+    .await?)
+}
+
+pub async fn get_by_uid_all(uid: i32, pool: &PgPool) -> Result<Vec<DbConnection>> {
     Ok(sqlx::query_as!(
         DbConnection,
         "SELECT * FROM connections WHERE uid = $1",
@@ -55,7 +69,7 @@ pub async fn get_by_uid(uid: i32, pool: &PgPool) -> Result<Vec<DbConnection>> {
 pub async fn get_by_username(username: &str, pool: &PgPool) -> Result<Vec<DbConnection>> {
     Ok(sqlx::query_as!(
         DbConnection,
-        "SELECT * FROM connections WHERE username = $1",
+        "SELECT * FROM connections WHERE username = $1 AND active = TRUE",
         username
     )
     .fetch_all(pool)
@@ -69,7 +83,7 @@ pub async fn get_by_uid_and_username(
 ) -> Result<DbConnection> {
     Ok(sqlx::query_as!(
         DbConnection,
-        "SELECT * FROM connections WHERE uid = $1 AND username = $2",
+        "SELECT * FROM connections WHERE uid = $1 AND username = $2 AND active = TRUE",
         uid,
         username,
     )

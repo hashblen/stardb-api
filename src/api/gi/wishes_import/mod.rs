@@ -209,6 +209,7 @@ async fn post_gi_wishes_import(
             username,
             verified: true,
             private: false,
+            active: true,
         };
 
         database::gi::connections::set(&connection, &pool).await?;

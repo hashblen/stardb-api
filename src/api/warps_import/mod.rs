@@ -184,6 +184,7 @@ async fn post_warps_import(
             username,
             verified: true,
             private: false,
+            active: true,
         };
 
         database::connections::set(&connection, &pool).await?;

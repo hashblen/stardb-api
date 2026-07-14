@@ -4,5 +4,6 @@ FROM
     zzz_connections
 WHERE
     uid = $1
-    AND username = $2;
+    AND username = $2
+    AND active = TRUE;
 

@@ -3,6 +3,4 @@ SELECT
 FROM
     zzz_connections
 WHERE
-    username = $1
-    AND active = TRUE;
-
+    uid = $1;
