@@ -28,6 +28,9 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
 #[derive(serde::Deserialize, utoipa::ToSchema)]
 struct SrsWarpsImportParams {
     data: String,
+    /// Admin only: also import pulls at or after the earliest one already on the site
+    #[serde(default)]
+    force: bool,
 }
 
 #[derive(serde::Deserialize)]
@@ -71,6 +74,7 @@ async fn post_srs_warps_import(
     let uid = *uid;
 
     let admin = database::admins::exists(&username, &pool).await?;
+    let force = admin && params.force;
 
     let allowed = admin
         || database::connections::get_by_username(&username, &pool)
@@ -194,10 +198,10 @@ async fn post_srs_warps_import(
         for warp in warps.iter() {
             let timestamp = warp.time;
 
-            if !admin {
+            if !force {
                 if let Some(earliest_timestamp) = earliest_timestamp {
                     if timestamp >= earliest_timestamp {
-                        break;
+                        continue;
                     }
                 }
             }

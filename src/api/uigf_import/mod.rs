@@ -31,6 +31,9 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
 #[derive(serde::Deserialize, utoipa::ToSchema)]
 struct UigfImportParams {
     data: String,
+    /// Admin only: also import pulls at or after the earliest one already on the site
+    #[serde(default)]
+    force: bool,
 }
 
 #[derive(serde::Deserialize, Clone)]
@@ -181,6 +184,7 @@ async fn post_uigf_import(
     }
 
     let admin = database::admins::exists(&username, &pool).await?;
+    let force = admin && params.force;
 
     // HSR (hkrpg)
     for entry in &uigf.hkrpg {
@@ -262,10 +266,10 @@ async fn post_uigf_import(
             };
 
             for (id, character, light_cone, time) in pulls {
-                if !admin {
+                if !force {
                     if let Some(earliest_timestamp) = earliest_timestamp {
                         if *time >= earliest_timestamp {
-                            break;
+                            continue;
                         }
                     }
                 }
@@ -457,10 +461,10 @@ async fn post_uigf_import(
             };
 
             for (id, character, weapon, time) in pulls {
-                if !admin {
+                if !force {
                     if let Some(earliest_timestamp) = earliest_timestamp {
                         if *time >= earliest_timestamp {
-                            break;
+                            continue;
                         }
                     }
                 }

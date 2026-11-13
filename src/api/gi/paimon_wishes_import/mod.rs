@@ -27,6 +27,9 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
 struct PaimonWishesImportParams {
     data: String,
     profile: String,
+    /// Admin only: also import pulls at or after the earliest one already on the site
+    #[serde(default)]
+    force: bool,
 }
 
 #[derive(serde::Deserialize)]
@@ -76,6 +79,7 @@ async fn post_paimon_warps_import(
     };
 
     let admin = database::admins::exists(&username, &pool).await?;
+    let force = admin && params.force;
 
     if !admin
         && database::gi::profiles::get_by_uid(uid, &pool)
@@ -172,9 +176,11 @@ async fn post_paimon_warps_import(
                 .and_utc()
                 - timestamp_offset;
 
-            if let Some(earliest_timestamp) = earliest_timestamp {
-                if timestamp >= earliest_timestamp {
-                    break;
+            if !force {
+                if let Some(earliest_timestamp) = earliest_timestamp {
+                    if timestamp >= earliest_timestamp {
+                        break;
+                    }
                 }
             }
 

@@ -29,6 +29,9 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
 #[derive(Deserialize, utoipa::ToSchema)]
 struct Data {
     data: String,
+    /// Admin only: also import pulls at or after the earliest one already on the site
+    #[serde(default)]
+    force: bool,
 }
 
 #[derive(Deserialize)]
@@ -83,6 +86,7 @@ async fn post_srgf_warps_import(
     let uid = srgf.info.uid.parse()?;
 
     let admin = database::admins::exists(&username, &pool).await?;
+    let force = admin && data.force;
 
     let allowed = admin
         || database::connections::get_by_username(&username, &pool)
@@ -192,10 +196,10 @@ async fn post_srgf_warps_import(
         for warp in warps.iter() {
             let timestamp = warp.time;
 
-            if !admin {
+            if !force {
                 if let Some(earliest_timestamp) = earliest_timestamp {
                     if timestamp >= earliest_timestamp {
-                        break;
+                        continue;
                     }
                 }
             }
